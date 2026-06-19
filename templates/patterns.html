@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+
+<a class="back-link" href="/">← Network View</a>
+<h2 style="margin-top:16px;">Pattern Analysis</h2>
+<p style="color:#495057;margin-bottom:24px;">
+  Aggregated patterns across {{ total_cases }} securities class actions.
+  Which firms dominate which sectors? Which judges resolve cases fastest?
+  Where do allegation types cluster by industry?
+</p>
+
+<div class="two-col">
+  <div class="chart-container">
+    <h3 style="margin-bottom:4px;">Most Active Plaintiff Firms</h3>
+    <div id="firm-chart"></div>
+  </div>
+  <div class="chart-container">
+    <h3 style="margin-bottom:4px;">Allegation Type Distribution</h3>
+    <div id="allegation-chart"></div>
+  </div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+Plotly.newPlot('firm-chart', {{ firm_chart | safe }}.traces, {{ firm_chart | safe }}.layout,
+  {responsive:true, displayModeBar:false});
+Plotly.newPlot('allegation-chart', {{ allegation_chart | safe }}.traces, {{ allegation_chart | safe }}.layout,
+  {responsive:true, displayModeBar:false});
+</script>
+
+<hr>
+
+<h3 style="margin-bottom:12px;">Firm × Industry Matrix</h3>
+<p class="note" style="margin-bottom:12px;">
+  Cases filed by each firm, broken down by defendant industry sector.
+  Shows which plaintiff firms specialize in which sectors.
+</p>
+<table class="pattern-table">
+  <thead>
+    <tr>
+      <th>Plaintiff Firm</th>
+      {% for sector in pattern_data.sectors_list %}
+      <th style="text-align:center;">{{ sector }}</th>
+      {% endfor %}
+      <th style="text-align:center;">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for firm, sector_counts in pattern_data.firm_industry.items() %}
+    <tr>
+      <td><strong>{{ firm.split(" LLP")[0].split(" LLC")[0] }}</strong></td>
+      {% for sector in pattern_data.sectors_list %}
+        {% set count = sector_counts.get(sector, 0) %}
+        {% if count > 0 %}
+        <td class="cell-count">{{ count }}</td>
+        {% else %}
+        <td class="cell-zero">—</td>
+        {% endif %}
+      {% endfor %}
+      <td class="cell-count">{{ sector_counts.values() | sum }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<hr>
+
+<h3 style="margin-bottom:12px;">Judge Resolution Statistics</h3>
+<p class="note" style="margin-bottom:12px;">
+  Cases, settlements, and average days to resolution by presiding judge.
+  Settlement amounts are approximate figures from public reporting.
+</p>
+<table>
+  <thead>
+    <tr>
+      <th>Judge</th>
+      <th style="text-align:center;">Cases</th>
+      <th style="text-align:center;">Settled</th>
+      <th style="text-align:right;">Avg. Days to Settlement</th>
+      <th style="text-align:right;">Total Recovery (approx.)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in pattern_data.judge_rows %}
+    <tr>
+      <td>{{ row.judge }}</td>
+      <td style="text-align:center;">{{ row.cases }}</td>
+      <td style="text-align:center;">{{ row.settled }}</td>
+      <td style="text-align:right;">
+        {% if row.avg_days %}{{ row.avg_days }} days{% else %}—{% endif %}
+      </td>
+      <td style="text-align:right;">
+        {% if row.total_recovery_usd > 0 %}
+          {% if row.total_recovery_usd >= 1e9 %}
+            ${{ "%.2f" | format(row.total_recovery_usd / 1e9) }}B
+          {% else %}
+            ${{ "%.1f" | format(row.total_recovery_usd / 1e6) }}M
+          {% endif %}
+        {% else %}
+          —
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="note">
+  Settlement amounts are approximate figures drawn from public reporting and court
+  records. They may differ from final amounts after legal fees, notice costs, and
+  cy pres distributions. "Days to Settlement" counts from the complaint filing date.
+</p>
+
+<hr>
+
+<h3 style="margin-bottom:12px;">Industry Distribution</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Industry Sector</th>
+      <th style="text-align:center;">Cases</th>
+      <th style="text-align:right;">Share</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for sector, count in pattern_data.industry_counts.items() | sort(attribute='1', reverse=True) %}
+    <tr>
+      <td>{{ sector }}</td>
+      <td style="text-align:center;">{{ count }}</td>
+      <td style="text-align:right;">{{ "%.0f" | format(count / total_cases * 100) }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="alert alert-info" style="margin-top:8px;">
+  <strong>Methodology:</strong> This dataset contains {{ total_cases }} pre-seeded real securities
+  class actions from 2012–2019. Patterns reflect this sample only — not the full universe of
+  securities litigation. Allegation types and harm theories were extracted by Claude from
+  paraphrased complaint excerpts. Settlement amounts are from public sources and are approximate.
+</div>
+
+{% endblock %}

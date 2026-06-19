@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+
+<a class="back-link" href="/">← All Cases</a>
+<h2 style="margin-top:16px;">{{ complaint.case_name }}</h2>
+
+<p class="meta" style="margin-bottom:20px;">
+  {{ complaint.court }}
+  {% if complaint.docket_number %} · Docket {{ complaint.docket_number }}{% endif %}
+  {% if complaint.date_filed %} · Filed {{ complaint.date_filed }}{% endif %}
+  {% if complaint.courtlistener_url %}
+   · <a href="{{ complaint.courtlistener_url }}" target="_blank" rel="noopener"
+        style="color:#0d6efd;font-size:.85rem;">View on CourtListener →</a>
+  {% endif %}
+</p>
+
+<div class="two-col" style="margin-bottom:20px;">
+  <div>
+    <h3 style="margin-bottom:8px;">Case Details</h3>
+    <table style="margin-bottom:0;">
+      <tr>
+        <th style="width:40%">Defendant</th>
+        <td>{{ complaint.defendant_company }}</td>
+      </tr>
+      <tr>
+        <th>Industry</th>
+        <td>{{ complaint.industry_sector }}</td>
+      </tr>
+      <tr>
+        <th>Plaintiff Firm</th>
+        <td>{{ complaint.plaintiff_law_firm }}</td>
+      </tr>
+      {% if complaint.judge_name %}
+      <tr>
+        <th>Judge</th>
+        <td>{{ complaint.judge_name }}</td>
+      </tr>
+      {% endif %}
+      {% if complaint.class_period_str() %}
+      <tr>
+        <th>Class Period</th>
+        <td>{{ complaint.class_period_str() }}</td>
+      </tr>
+      {% endif %}
+      <tr>
+        <th>Allegation Type</th>
+        <td>
+          <span class="allegation-dot"
+                style="background:{{ allegation_colors.get(complaint.allegation_type, '#999') }}"></span>
+          {{ allegation_labels.get(complaint.allegation_type, complaint.allegation_type) }}
+        </td>
+      </tr>
+      <tr>
+        <th>Status</th>
+        <td><span class="badge badge-status-{{ complaint.status }}">{{ complaint.status }}</span></td>
+      </tr>
+      {% if complaint.settlement_amount_usd %}
+      <tr>
+        <th>Settlement</th>
+        <td>{{ complaint.settlement_str() }} {% if complaint.settlement_date %}({{ complaint.settlement_date[:4] }}){% endif %}</td>
+      </tr>
+      {% endif %}
+      {% if complaint.days_to_resolution %}
+      <tr>
+        <th>Days to Resolution</th>
+        <td>{{ complaint.days_to_resolution }} days</td>
+      </tr>
+      {% endif %}
+    </table>
+  </div>
+
+  {% if complaint.get_defendant_officers() %}
+  <div>
+    <h3 style="margin-bottom:8px;">Individual Defendants</h3>
+    <ul style="list-style:none;padding:0;">
+      {% for officer in complaint.get_defendant_officers() %}
+      <li style="padding:6px 0;border-bottom:1px solid #dee2e6;font-size:.9rem;">{{ officer }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+
+<h3 style="margin-bottom:8px;">Claude's Harm Theory Extraction</h3>
+<p class="note" style="margin-bottom:10px;">
+  Claude read the complaint text below and extracted the mechanism by which investors were allegedly harmed.
+</p>
+<div class="harm-box">
+  <p>{{ complaint.harm_theory }}</p>
+</div>
+
+{% if complaint.get_key_allegations() %}
+<h3 style="margin-bottom:8px;">Key Factual Allegations</h3>
+<ul style="margin-bottom:20px;padding-left:20px;">
+  {% for allegation in complaint.get_key_allegations() %}
+  <li style="margin-bottom:8px;font-size:.9rem;color:#343a40;">{{ allegation }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if complaint.summary_text %}
+<h3 style="margin-bottom:8px;">Complaint Excerpt (Source Text Analyzed)</h3>
+<p class="note" style="margin-bottom:8px;">
+  Text provided to Claude for extraction. In demo mode this is a paraphrase of public
+  complaint allegations; in live mode it is the CourtListener snippet or document text.
+</p>
+<div class="excerpt-box">{{ complaint.summary_text }}</div>
+{% endif %}
+
+{% endblock %}

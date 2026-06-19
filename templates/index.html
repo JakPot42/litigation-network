@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Securities Litigation Network</h2>
+<p style="color:#495057;margin-bottom:24px;">
+  Maps securities class action complaints to plaintiff law firms and presiding judges.
+  Claude extracts allegation category and harm theory from each complaint. NetworkX computes
+  the network. Edge colors encode allegation type.
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="num">{{ total_cases }}</div>
+    <div class="label">Cases Loaded</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">{{ settled_count }}</div>
+    <div class="label">Settled</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">{{ unique_firms }}</div>
+    <div class="label">Plaintiff Firms</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">{{ unique_companies }}</div>
+    <div class="label">Defendant Companies</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">${{ "%.1fB" | format(total_recovery_usd / 1e9) }}</div>
+    <div class="label">Total Recovery (approx.)</div>
+  </div>
+</div>
+
+<div class="chart-container">
+  <h3 style="margin-bottom:4px;">Litigation Network</h3>
+  <p class="note" style="margin-bottom:12px;">
+    ◆ Plaintiff firm &nbsp;● Defendant company (colored by industry) &nbsp;■ Judge
+    &nbsp;— Edge color = allegation type &nbsp;··· Presiding judge edge
+  </p>
+  <div id="network-chart"></div>
+</div>
+
+<div class="chart-container">
+  <h3 style="margin-bottom:4px;">Allegation Type Distribution</h3>
+  <div id="allegation-chart"></div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+var networkData = {{ network_chart | safe }};
+Plotly.newPlot('network-chart', networkData.traces, networkData.layout,
+  {responsive: true, displayModeBar: false});
+
+var allegationData = {{ allegation_chart | safe }};
+Plotly.newPlot('allegation-chart', allegationData.traces, allegationData.layout,
+  {responsive: true, displayModeBar: false});
+</script>
+
+<hr>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+  <h3>Cases</h3>
+  <a href="/patterns" style="font-size:.9rem;color:#0d6efd;text-decoration:none;">
+    View Pattern Analysis →
+  </a>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Case</th>
+      <th>Court</th>
+      <th>Filed</th>
+      <th>Allegation</th>
+      <th>Plaintiff Firm</th>
+      <th>Settlement</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in complaints %}
+    <tr>
+      <td><a href="/complaint/{{ c.id }}">{{ c.case_name }}</a></td>
+      <td class="meta">{{ c.court }}</td>
+      <td class="meta">{{ c.date_filed[:4] if c.date_filed else "—" }}</td>
+      <td>
+        <span class="allegation-dot"
+              style="background:{{ allegation_colors.get(c.allegation_type, '#999') }}"></span>
+        {{ allegation_labels.get(c.allegation_type, c.allegation_type) }}
+      </td>
+      <td class="meta">{{ c.plaintiff_law_firm.split(" LLP")[0].split(" LLC")[0] }}</td>
+      <td class="meta">
+        {% if c.settlement_amount_usd %}
+          {{ c.settlement_str() }}
+        {% else %}
+          —
+        {% endif %}
+      </td>
+      <td>
+        <span class="badge badge-status-{{ c.status }}">{{ c.status }}</span>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<hr>
+<h3>Ingest New Case from CourtListener</h3>
+{% if demo_mode %}
+<div class="alert alert-warning" style="margin-bottom:16px;">
+  Live ingestion is disabled in DEMO MODE. The pre-seeded cases above show the full feature.
+  Set DEMO_MODE=False to search and ingest real cases from CourtListener.
+</div>
+{% endif %}
+<form method="post" action="/ingest">
+  <div class="two-col">
+    <div class="form-group">
+      <label>Search Query</label>
+      <input type="text" name="search_query" placeholder="e.g. in re apple securities litigation"
+             {% if demo_mode %}disabled{% endif %}>
+    </div>
+  </div>
+  <p class="note" style="margin-bottom:12px;">
+    Searches CourtListener PACER database. In live mode, Claude extracts allegation type
+    and harm theory from available complaint text or case metadata.
+  </p>
+  <button type="submit" {% if demo_mode %}disabled{% endif %}>Search &amp; Ingest →</button>
+</form>
+
+{% endblock %}

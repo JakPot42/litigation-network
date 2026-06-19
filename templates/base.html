@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ app_title }}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+           background: #f8f9fa; color: #212529; line-height: 1.6; }
+    .topbar { background: #1a1a2e; color: #fff; padding: 14px 24px;
+              display: flex; align-items: center; gap: 12px; }
+    .topbar h1 { font-size: 1.1rem; font-weight: 600; letter-spacing: .02em; }
+    .topbar nav { margin-left: auto; display: flex; gap: 20px; }
+    .topbar nav a { color: rgba(255,255,255,.75); text-decoration: none; font-size: .85rem; }
+    .topbar nav a:hover { color: #fff; }
+    .demo-banner { background: #fff3cd; border-bottom: 1px solid #ffc107;
+                   padding: 8px 24px; font-size: .85rem; color: #856404; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+    h2 { font-size: 1.4rem; font-weight: 600; margin-bottom: 16px; }
+    h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                 gap: 12px; margin-bottom: 28px; }
+    .stat-card { background: #fff; border: 1px solid #dee2e6; border-radius: 8px;
+                 padding: 16px; text-align: center; }
+    .stat-card .num { font-size: 1.8rem; font-weight: 700; color: #1a1a2e; }
+    .stat-card .label { font-size: .8rem; color: #6c757d; margin-top: 2px; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px;
+             font-size: .75rem; font-weight: 600; letter-spacing: .03em; }
+    .badge-status-settled { background: #d1e7dd; color: #0a3622; }
+    .badge-status-dismissed { background: #f8d7da; color: #842029; }
+    .badge-status-filed { background: #cff4fc; color: #055160; }
+    .badge-status-ongoing { background: #fff3cd; color: #664d03; }
+
+    .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-size: .9rem; }
+    .alert-info { background: #cff4fc; border: 1px solid #9eeaf9; color: #055160; }
+    .alert-warning { background: #fff3cd; border: 1px solid #ffc107; color: #664d03; }
+
+    .chart-container { background: #fff; border: 1px solid #dee2e6; border-radius: 8px;
+                       padding: 16px; margin-bottom: 20px; }
+
+    table { width: 100%; border-collapse: collapse; background: #fff;
+            border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6; margin-bottom: 20px; }
+    th { background: #1a1a2e; color: #fff; padding: 10px 14px; text-align: left;
+         font-size: .83rem; font-weight: 600; }
+    td { padding: 9px 14px; border-bottom: 1px solid #dee2e6; font-size: .88rem; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8f9fa; }
+    td a { color: #0d6efd; text-decoration: none; }
+    td a:hover { text-decoration: underline; }
+
+    .allegation-dot { display: inline-block; width: 10px; height: 10px;
+                      border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-weight: 500; margin-bottom: 5px; font-size: .9rem; }
+    input[type=text] { width: 100%; padding: 10px 12px; border: 1px solid #ced4da;
+                       border-radius: 6px; font-size: .95rem; font-family: inherit; }
+    button[type=submit] { background: #1a1a2e; color: #fff; border: none;
+                          padding: 10px 24px; border-radius: 6px; font-size: .95rem;
+                          cursor: pointer; font-weight: 500; }
+    button[type=submit]:disabled { opacity: .5; cursor: not-allowed; }
+    button[type=submit]:hover:not(:disabled) { background: #16213e; }
+
+    hr { border: none; border-top: 1px solid #dee2e6; margin: 28px 0; }
+    .back-link { font-size: .9rem; color: #6c757d; text-decoration: none; }
+    .back-link:hover { color: #212529; }
+    .meta { font-size: .82rem; color: #6c757d; }
+    .note { font-size: .82rem; color: #6c757d; font-style: italic; margin-top: 6px; }
+
+    .harm-box { background: #fff; border-left: 4px solid #1a1a2e; padding: 16px 20px;
+                border-radius: 0 8px 8px 0; margin-bottom: 20px;
+                border-top: 1px solid #dee2e6; border-right: 1px solid #dee2e6;
+                border-bottom: 1px solid #dee2e6; }
+    .harm-box p { font-size: .95rem; color: #343a40; line-height: 1.7; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+    .excerpt-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px;
+                   padding: 16px; font-size: .85rem; color: #495057; line-height: 1.65;
+                   max-height: 300px; overflow-y: auto; }
+
+    .pattern-table { font-size: .85rem; }
+    .pattern-table td, .pattern-table th { padding: 7px 12px; }
+    .cell-count { text-align: center; font-weight: 600; }
+    .cell-zero { text-align: center; color: #dee2e6; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>⚖ Securities Litigation Network</h1>
+    <nav>
+      <a href="/">Network</a>
+      <a href="/patterns">Patterns</a>
+    </nav>
+  </div>
+  {% if demo_mode %}
+  <div class="demo-banner">
+    DEMO MODE — 12 pre-seeded real securities class action cases. Set DEMO_MODE=False to ingest live cases from CourtListener.
+  </div>
+  {% endif %}
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>
